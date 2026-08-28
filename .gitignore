@@ -1,0 +1,37 @@
+# Build output
+/target/
+**/*.rs.bk
+
+# Cargo.lock is committed on purpose: this workspace ships the `nicer` binary, so the
+# exact dependency graph a build used is part of what gets released.
+
+# Daemon state, if a run is pointed at the working tree with --root or --socket.
+# identity.key is an Ed25519 private key and must never be committed.
+identity.key
+peers.json
+config.toml
+*.sock
+/config/
+/data/
+/run/
+
+# Partial transfers, named .nicer-<millis>-<pid>.part
+.nicer-*.part
+
+# TLS session keys written when `keylog` is configured
+*.keylog
+*-keys.log
+
+# Editors
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+\#*\#
+.\#*
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini

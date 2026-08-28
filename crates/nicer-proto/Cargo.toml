@@ -1,0 +1,19 @@
+[package]
+name = "nicer-proto"
+description = "NICE/1 wire format: framing, opcodes, and CBOR payloads"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[dependencies]
+bytes.workspace = true
+ciborium.workspace = true
+serde.workspace = true
+serde_bytes = "0.11"
+thiserror.workspace = true
+tokio-util.workspace = true
+
+[dev-dependencies]
+hex.workspace = true
