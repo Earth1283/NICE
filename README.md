@@ -10,6 +10,7 @@ one before writing a client.
 ```
 crates/nicer-proto   framing, opcodes, CBOR payloads. No state, no policy.
 crates/nicer         the daemon: identity, pairing, transport, transfers, chat, discovery
+crates/nicer-tui     a ratatui frontend, embedding the daemon directly
 ```
 
 `nicer` is both the library and the binary.
@@ -30,6 +31,19 @@ nicer identity          # this device's fingerprint
 nicer config            # the effective configuration
 nicer run --help
 ```
+
+## The TUI
+
+```sh
+cargo run -p nicer-tui --release
+```
+
+`nicer-tui` embeds the daemon library directly (see "Embedding instead" in
+[docs/client-guide.md](docs/client-guide.md)) rather than driving it over the socket, so it's
+one process, no separate `nicer run` needed. Discovered and paired peers, live connections,
+transfers, and chat each get a tab; pairing and incoming offers pop up as modals the moment
+they arrive. Press `?` inside it for the keybindings. Pass `--socket PATH` if you also want
+another client able to drive the same daemon over NDJSON while the TUI runs.
 
 ## Documentation
 
@@ -94,4 +108,4 @@ The protocol surface is complete: both transport modes, discovery, pairing, offe
 and clipboard transfer, integrity checking, chat, rate limiting, recovery, and the error
 opcodes. Windows is written for but untested.
 
-There is no frontend yet.
+`nicer-tui` is a working frontend; a socket-based one in another language is still open.

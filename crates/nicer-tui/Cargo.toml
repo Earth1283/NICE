@@ -1,0 +1,30 @@
+[package]
+name = "nicer-tui"
+description = "A ratatui frontend for the NICE/1 daemon"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[lib]
+name = "nicer_tui"
+path = "src/lib.rs"
+
+[[bin]]
+name = "nicer-tui"
+path = "src/main.rs"
+
+[dependencies]
+nicer.workspace = true
+nicer-proto.workspace = true
+
+anyhow.workspace = true
+clap.workspace = true
+tracing.workspace = true
+tracing-subscriber.workspace = true
+
+futures-util.workspace = true
+tokio.workspace = true
+ratatui = "0.29.0"
+crossterm = { version = "0.29.0", features = ["event-stream"] }

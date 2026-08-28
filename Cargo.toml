@@ -1,6 +1,6 @@
 [workspace]
 resolver = "2"
-members = ["crates/nicer-proto", "crates/nicer"]
+members = ["crates/nicer-proto", "crates/nicer", "crates/nicer-tui"]
 
 [workspace.package]
 version = "0.1.0"
