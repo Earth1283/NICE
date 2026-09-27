@@ -1,0 +1,121 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  CARGO_TERM_COLOR: always
+  RUST_BACKTRACE: 1
+
+jobs:
+  clippy:
+    name: clippy
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v5
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy
+      - uses: Swatinem/rust-cache@v2
+        with:
+          cache-on-failure: true
+          save-if: ${{ github.event_name == 'push' }}
+      - run: cargo clippy --workspace --all-targets --locked -- -D warnings
+
+  build:
+    name: ${{ matrix.name }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: linux-amd64
+            os: ubuntu-24.04
+            target: x86_64-unknown-linux-gnu
+          - name: linux-arm64
+            os: ubuntu-24.04-arm
+            target: aarch64-unknown-linux-gnu
+          - name: macos-intel
+            os: macos-15-intel
+            target: x86_64-apple-darwin
+          - name: macos-arm64
+            os: macos-15
+            target: aarch64-apple-darwin
+          - name: windows-amd64
+            os: windows-2025
+            target: x86_64-pc-windows-msvc
+          - name: windows-arm64
+            os: windows-11-arm
+            target: aarch64-pc-windows-msvc
+    steps:
+      - uses: actions/checkout@v5
+
+      # The windows-11-arm image doesn't always ship rustup.
+      - name: Install rustup (Windows ARM64)
+        if: matrix.target == 'aarch64-pc-windows-msvc'
+        shell: pwsh
+        run: |
+          if (-not (Get-Command rustup -ErrorAction SilentlyContinue)) {
+            Invoke-WebRequest https://static.rust-lang.org/rustup/dist/aarch64-pc-windows-msvc/rustup-init.exe -OutFile rustup-init.exe
+            ./rustup-init.exe -y --default-toolchain none --profile minimal
+            "$env:USERPROFILE\.cargo\bin" | Out-File -FilePath $env:GITHUB_PATH -Append -Encoding utf8
+          }
+
+      # aws-lc-sys needs clang-cl for aarch64-pc-windows-msvc. It finds the one bundled with
+      # Visual Studio on its own; this puts a standalone LLVM on PATH if that's what's there.
+      - name: Locate clang-cl (Windows ARM64)
+        if: matrix.target == 'aarch64-pc-windows-msvc'
+        shell: pwsh
+        run: |
+          if (-not (Get-Command clang-cl -ErrorAction SilentlyContinue)) {
+            $llvm = "C:\Program Files\LLVM\bin"
+            if (Test-Path "$llvm\clang-cl.exe") {
+              $llvm | Out-File -FilePath $env:GITHUB_PATH -Append -Encoding utf8
+            }
+          }
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+      # Caches ~/.cargo/registry, ~/.cargo/git and target/ (test and release builds) per
+      # target. Only pushes save: a PR restores from its branch or main, and doesn't spend the
+      # repo's 10 GB cache budget on a duplicate entry for its merge ref.
+      - uses: Swatinem/rust-cache@v2
+        with:
+          key: ${{ matrix.target }}
+          cache-on-failure: true
+          save-if: ${{ github.event_name == 'push' }}
+
+      - name: Test
+        run: cargo test --workspace --locked --target ${{ matrix.target }}
+
+      - name: Build nicer and nicer-tui
+        run: cargo build --release --locked --target ${{ matrix.target }} -p nicer -p nicer-tui
+
+      - name: Package (Unix)
+        if: runner.os != 'Windows'
+        shell: bash
+        run: |
+          mkdir -p dist
+          tar -C target/${{ matrix.target }}/release -czf dist/nicer-${{ matrix.target }}.tar.gz nicer nicer-tui
+
+      # GitHub already zips every artifact on download, so Windows gets the bare .exe files
+      # rather than a zip inside a zip. Unix keeps a tarball to preserve the executable bit.
+      - name: Package (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force dist | Out-Null
+          Copy-Item target/${{ matrix.target }}/release/nicer.exe, target/${{ matrix.target }}/release/nicer-tui.exe dist/
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: nicer-${{ matrix.target }}
+          path: dist/*
+          if-no-files-found: error
