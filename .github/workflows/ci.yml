@@ -105,12 +105,14 @@ jobs:
           mkdir -p dist
           tar -C target/${{ matrix.target }}/release -czf dist/nicer-${{ matrix.target }}.tar.gz nicer nicer-tui
 
+      # GitHub already zips every artifact on download, so Windows gets the bare .exe files
+      # rather than a zip inside a zip. Unix keeps a tarball to preserve the executable bit.
       - name: Package (Windows)
         if: runner.os == 'Windows'
         shell: pwsh
         run: |
           New-Item -ItemType Directory -Force dist | Out-Null
-          Compress-Archive -Path target/${{ matrix.target }}/release/nicer.exe, target/${{ matrix.target }}/release/nicer-tui.exe -DestinationPath dist/nicer-${{ matrix.target }}.zip
+          Copy-Item target/${{ matrix.target }}/release/nicer.exe, target/${{ matrix.target }}/release/nicer-tui.exe dist/
 
       - uses: actions/upload-artifact@v4
         with:
