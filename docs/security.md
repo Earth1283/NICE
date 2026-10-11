@@ -124,8 +124,8 @@ not authentication of content: a paired peer can send whatever it likes, correct
 | Idle connection | 90 seconds | Connection closed |
 | Unanswered offer | 5 minutes | Refused automatically |
 
-A peer that provokes more than five rate limits on one connection is sent `NVIDIA` and
-disconnected.
+A peer that provokes more than five offer or chat rate limits on one connection is sent
+`NVIDIA` and disconnected. Frame-budget notices do not count; they are paced by delay.
 
 Frames are never dropped to enforce a rate, because dropping one would corrupt stream
 state. The daemon slows its reads instead and lets TCP apply the backpressure.
