@@ -181,8 +181,10 @@ A `SHUT_UP` received is recorded, and the daemon stops initiating operations in 
 until the interval expires. `retry_after_ms` above one hour is treated as one hour. An
 in-flight transfer is never interrupted by `SHUT_UP`.
 
-A peer that provokes more than five rate limits on one connection is sent `NVIDIA` and
-disconnected (§14).
+A peer that provokes more than five offer or chat rate limits on one connection is sent
+`NVIDIA` and disconnected (§14). Connection-scoped frame-budget notices do not count: the
+delay already throttles the sender, and a bulk transfer stays over the frame budget for its
+whole duration.
 
 ## Recovery
 

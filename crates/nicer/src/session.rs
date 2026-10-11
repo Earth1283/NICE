@@ -1212,7 +1212,9 @@ impl Session {
             .unwrap_or(true);
         if cooled {
             self.last_shut_up = Some(Instant::now());
-            self.note_shut_up()?;
+            // Deliberately not a strike: the sleep below backpressures the sender through TCP,
+            // so a bulk transfer legitimately sits over the frame budget for its whole
+            // duration, and counting these would NVIDIA any large download.
             let notice = shut_up(delay, ShutUpScope::Connection, None);
             self.send(Frame::control_cbor(Opcode::ShutUp, &notice)?)
                 .await?;
